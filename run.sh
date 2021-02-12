@@ -14,6 +14,6 @@
 #module load cuda/10.1-cudnn7.6
 
 #python3 train.py --dataroot ./datasets/sketchy --name sketchy_pix2pix --model sketchr2pix2pix --direction AtoB --display_id=0 --input_nc 8 --output_nc 3 --gpu_ids -1
-python3 train.py --dataroot ./datasets/sketchy --name sketchy_pix2pix --model sketchr2pix2pix --direction AtoB --display_id=0 --input_nc 8 --output_nc 3
+python3 sketch-r2pix2pix_train.py --dataroot ./datasets/sketchy --name sketchy_pix2pix --model sketchr2pix2pix --direction AtoB --display_id=0 --input_nc 8 --output_nc 3
 
 #python test.py --dataroot ./datasets/sketchy --name sketchy_pix2pix --model pix2pix --direction AtoB --input_nc 8 --output_nc 3
