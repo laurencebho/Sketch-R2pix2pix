@@ -24,13 +24,13 @@ if _project_folder_ not in sys.path:
 
 #from data.quickdraw_dataset import QuickDrawDataset
 #from data.tuberlin_dataset import TUBerlinDataset
-#from data.sketchy_dataset import SketchyDataset
+from data.sketchy_dataset import SketchyDataset
 from models.modelzoo import CNN_MODELS, CNN_IMAGE_SIZES
 from models.sketch_r2cnn import SketchR2CNN
 from neuralline.rasterize import Raster
 
 
-DATASETS = {'tuberlin': TUBerlinDataset, 'quickdraw': QuickDrawDataset, 'sketchy': SketchyDataset}
+DATASETS = {'sketchy': SketchyDataset}
 
 
 def train_data_collate(batch):
