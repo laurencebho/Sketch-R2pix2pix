@@ -21,5 +21,8 @@
     "dataset_fn": "sketchy",
     "dataset_root": "datasets/sketchy.pkl",
     "log_dir": "logs/sketchy",
-    "model_fn": "resnet50"
+    "model_fn": "resnet50",
+    "ckpt_nets": null,
+    "ckpt_step_freq": null,
+    "mode": null
 }
