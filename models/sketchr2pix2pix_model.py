@@ -69,7 +69,7 @@ class SketchR2Pix2PixModel(BaseModel):
 
     def set_input(self, input):
         self.real_B = input['B']
-        self.AB_path = input['AB_path']
+        self.AB_path = input['A_paths']
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
