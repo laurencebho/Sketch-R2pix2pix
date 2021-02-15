@@ -31,7 +31,7 @@ class SketchyDataset(Dataset):
 
         self.fold_idx = None
         self.offset = 0 #for folds
-        self.indices = list()
+        self.indices = [i for i in range(self.num_sketches)]
 
 
     def set_fold(self, idx):
@@ -64,8 +64,8 @@ class SketchyDataset(Dataset):
 
     def __getitem__(self, idx):
         #debugging
-        print(idx)
-        print(len(self.indices))
+        print(f'index {idx}')
+        print(f'indices array length {len(self.indices)}')
         print(f'num sketches {self.num_sketches}')
         print(f'num fnames {len(self.fnames)}')
 
