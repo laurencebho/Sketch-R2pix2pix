@@ -79,7 +79,15 @@ class SketchR2Pix2PixModel(BaseModel):
         print(f'FNAMES')
         print(self.svg_dataset.get_fnames())
 
-        svg_file_index = self.svg_dataset.get_fnames().index(search_filename)
+        fnames = self.svg_dataset.get_fnames()
+        svg_file_index = None
+        for i, fname in enumerate(fnames):
+            if fname.startswith(search_filename):
+                svg_file_index = i
+                break
+        
+        if svg_file_index is None:
+            raise Exception(f'could not find matching file for {search_filename}')
         svg_data = self.svg_dataset[svg_file_index]
 
         #see if you can .to(device) the full dataset instead
