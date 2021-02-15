@@ -24,5 +24,6 @@
     "model_fn": "resnet50",
     "ckpt_nets": null,
     "ckpt_step_freq": null,
+    "cjot_prefix": null,
     "mode": null
 }
