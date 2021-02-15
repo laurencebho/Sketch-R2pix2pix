@@ -102,7 +102,7 @@ class BaseTrain(object):
 
     def _parse_args(self):
         #read config json and make a dict
-        with open("sketchr-2cnn_options.json") as fr:
+        with open("models/sketchr-2cnn_options.json") as fr:
             config = json.load(fr)
 
         config['imgsize'] = CNN_IMAGE_SIZES[config['model_fn']]
