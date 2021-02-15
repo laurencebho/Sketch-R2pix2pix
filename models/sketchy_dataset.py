@@ -63,6 +63,13 @@ class SketchyDataset(Dataset):
         print('[*] Created a new {} dataset with {} fold as validation data'.format(self.mode, idx))
 
     def __getitem__(self, idx):
+        #debugging
+        print(idx)
+        print(len(self.indices))
+        print(f'num sketches {self.num_sketches}')
+        print(f'num fnames {len(self.fnames)}')
+
+
         cid = 0 #we just use the same category the whole time
         sid = self.indices[idx]
 
