@@ -73,7 +73,7 @@ class SketchR2Pix2PixModel(BaseModel):
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
-        search_filename = self.AB_path.split('/')[-1]
+        search_filename = self.AB_path[0].split('/')[-1]
         svg_file_index = self.svg_dataset.get_fnames().index(search_filename)
         svg_data = self.svg_dataset[svg_file_index]
 
