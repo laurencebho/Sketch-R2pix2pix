@@ -101,33 +101,9 @@ class BaseTrain(object):
             self.reporter.close()
 
     def _parse_args(self):
-        arg_parser = argparse.ArgumentParser()
-        arg_parser.add_argument('--batch_size', type=int, default=48)
-        arg_parser.add_argument('--ckpt_nets', nargs='*')
-        arg_parser.add_argument('--ckpt_prefix', type=str, default=None)
-        arg_parser.add_argument('--dataset_fn', type=str, default=None)
-        arg_parser.add_argument('--dataset_root', type=str, default=None)
-        arg_parser.add_argument('--gpu', type=int, default=0)
-        arg_parser.add_argument('--imgsize', type=int, default=224)
-        arg_parser.add_argument('--learn_rate_step', type=int, default=-1)
-        arg_parser.add_argument('--learn_rate', type=float, default=0.0001)
-        arg_parser.add_argument('--log_dir', type=str, default=None)
-        arg_parser.add_argument('--max_points', type=int, default=321)
-        arg_parser.add_argument('--model_fn', type=str, default=None)
-        arg_parser.add_argument('--note', type=str, default='')
-        arg_parser.add_argument('--num_epochs', type=int, default=1)
-        arg_parser.add_argument('--report_hist_freq', type=int, default=100)
-        arg_parser.add_argument('--report_image_freq', type=int, default=100)
-        arg_parser.add_argument('--report_scalar_freq', type=int, default=100)
-        arg_parser.add_argument('--save_epoch_freq', type=int, default=1)
-        arg_parser.add_argument('--save_step_freq', type=int, default=-1)
-        arg_parser.add_argument('--seed', type=int, default=10)
-        arg_parser.add_argument('--thickness', type=float, default=1.0)
-        arg_parser.add_argument('--valid_freq', type=int, default=1)
-        arg_parser.add_argument('--weight_decay', type=float, default=-1)
-
-        arg_parser = self.add_args(arg_parser)
-        config = vars(arg_parser.parse_args())
+        #read config json and make a dict
+        with open("sketchr-2cnn_options.json") as fr:
+            config = json.load(fr)
 
         config['imgsize'] = CNN_IMAGE_SIZES[config['model_fn']]
         if config['dataset_fn'] == 'quickdraw':
@@ -137,6 +113,11 @@ class BaseTrain(object):
             config['valid_freq'] = 1
         elif config['dataset_fn'] == 'tuberlin':
             config['max_points'] = 448
+            config['report_image_freq'] = 100
+            config['save_epoch_freq'] = 20
+            config['valid_freq'] = 20
+        elif config['dataset_fn'] == 'sketchy':
+            config['max_points'] = 700
             config['report_image_freq'] = 100
             config['save_epoch_freq'] = 20
             config['valid_freq'] = 20
@@ -303,11 +284,6 @@ class BaseTrain(object):
 
 
 class SketchR2CNNTrain(BaseTrain):
-
-    def add_args(self, arg_parser):
-        arg_parser.add_argument('--dropout', type=float, default=0.5)
-        arg_parser.add_argument('--intensity_channels', type=int, default=1)
-        return arg_parser
 
     def create_data_loaders(self, dataset_dict):
         data_loaders = {

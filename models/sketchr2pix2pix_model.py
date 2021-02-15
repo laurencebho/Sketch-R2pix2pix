@@ -42,7 +42,6 @@ class SketchR2Pix2PixModel(BaseModel):
         else:  # during test time, only load G
             self.model_names = ['G']
         #sketchrcnn model
-        #TODO: update options and defaults to support configuring SketchR2CNN
         self.sketchr2cnn = SketchR2CNNTrain() #or SketchR2CNNEval() depending on the mode
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
