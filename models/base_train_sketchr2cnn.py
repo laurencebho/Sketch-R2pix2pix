@@ -356,7 +356,7 @@ class SketchR2CNNTrain(BaseTrain):
             self.reporter.add_image('{}/sketch_input'.format(mode), image_grid, self.step_counters[mode])
         '''
 
-        _, _, images = self.net(batch_collate['points3'], batch_collate['points3_offset'], batch_collate['points3_length'])
+        _, _, images = self.net(batch_collate['points3'], batch_collate['points3_offset'], batch_padded['points3_length'])
         return images[0]
 
 
@@ -371,10 +371,10 @@ class SketchR2CNNTrain(BaseTrain):
         report_image_freq = self.config['report_image_freq']
         thickness = self.config['thickness']
 
-        points = torch.from_numpy(data_batch['points3']).to(self.device)
-        points_offset = torch.from_numpy(data_batch['points3_offset']).to(self.device)
+        points = data_batch['points3'].to(self.device)
+        points_offset = data_batch['points3_offset'].to(self.device)
         points_length = data_batch['points3_length']
-        category = torch.from_numpy(data_batch['category']).to(self.device)
+        category = data_batch['category'].to(self.device)
 
         if report_image_freq > 0 and self.step_counters[mode] % report_image_freq == 0:
             images = Raster.to_image(points, 1.0, imgsize, thickness, device=self.device)
