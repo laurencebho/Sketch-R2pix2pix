@@ -29,7 +29,7 @@ from models.modelzoo import CNN_MODELS, CNN_IMAGE_SIZES
 from models.sketch_r2cnn import SketchR2CNN
 from neuralline.rasterize import Raster
 
-
+DEFAULT_DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 DATASETS = {'sketchy': SketchyDataset}
 
 
@@ -347,7 +347,7 @@ class SketchR2CNNTrain(BaseTrain):
         batch_collate = dict()
         for k, v in batch_padded.items():
             sorted_arr = np.array([v[idx] for idx in sort_indices])
-            batch_collate[k] = torch.from_numpy(sorted_arr).to(device)
+            batch_collate[k] = torch.from_numpy(sorted_arr).to(DEFAULT_DEVICE)
 
         '''
         if report_image_freq > 0 and self.step_counters[mode] % report_image_freq == 0:

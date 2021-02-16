@@ -31,6 +31,8 @@ class SketchR2Pix2PixModel(BaseModel):
         Parameters:
             opt (Option class)-- stores all the experiment flags; needs to be a subclass of BaseOptions
         """
+        #device
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
         self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake']
@@ -89,7 +91,6 @@ class SketchR2Pix2PixModel(BaseModel):
             raise Exception(f'could not find matching file for {search_filename}')
         svg_data = self.svg_dataset[svg_file_index]
 
-        #see if you can .to(device) the full dataset instead
         self.real_A = self.sketchr2cnn.get_image(svg_data)
         self.fake_B = self.netG(self.real_A)  # G(A)
 
