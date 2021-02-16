@@ -91,7 +91,7 @@ class SketchR2Pix2PixModel(BaseModel):
             raise Exception(f'could not find matching file for {search_filename}')
         svg_data = self.svg_dataset[svg_file_index]
 
-        self.real_A = self.sketchr2cnn.get_image(svg_data).unsqueeze(0)
+        self.real_A = self.sketchr2cnn.get_image(svg_data)
         self.fake_B = self.netG(self.real_A)  # G(A)
 
 
