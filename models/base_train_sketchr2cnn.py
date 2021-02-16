@@ -313,17 +313,34 @@ class SketchR2CNNTrain(BaseTrain):
                            intensity_channels=intensity_channels,
                            device=self.device)
 
-    def get_image(self, data_batch):
+    def get_image(self, batch):
         '''
         imgsize = self.config['imgsize']
         report_hist_freq = self.config['report_hist_freq']
         report_image_freq = self.config['report_image_freq']
         thickness = self.config['thickness']
         '''
+        length_list = [len(item['points3']) for item in batch] 
+        max_length = max(length_list) 
 
-        points = data_batch['points3']
-        points_offset = 0
-        points_length = len(points)
+        points3_padded_list = list()
+        points3_offset_list = list()
+        for item in batch:
+            points3 = item['points3']
+            points3_length = len(points3)
+            points3_padded = np.zeros((max_length, 3), np.float32)
+            points3_padded[:, 2] = np.ones((max_length,), np.float32)
+            points3_padded[0:points3_length, :] = points3
+            points3_padded_list.append(points3_padded)
+
+            points3_offset = np.copy(points3_padded)
+            points3_offset[1:points3_length, 0:2] = points3[1:, 0:2] - points3[:points3_length - 1, 0:2]
+            points3_offset_list.append(points3_offset)
+
+
+        points = points3_padded_list
+        points_offset = points3_offset_list
+        points_length = [len(points)]
 
         '''
         if report_image_freq > 0 and self.step_counters[mode] % report_image_freq == 0:
