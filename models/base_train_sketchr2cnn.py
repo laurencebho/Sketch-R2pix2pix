@@ -347,7 +347,7 @@ class SketchR2CNNTrain(BaseTrain):
         batch_collate = dict()
         for k, v in batch_padded.items():
             sorted_arr = np.array([v[idx] for idx in sort_indices])
-            batch_collate[k] = torch.from_numpy(sorted_arr)
+            batch_collate[k] = torch.from_numpy(sorted_arr).to(device)
 
         '''
         if report_image_freq > 0 and self.step_counters[mode] % report_image_freq == 0:

@@ -76,7 +76,6 @@ class SketchR2Pix2PixModel(BaseModel):
         search_filename = self.AB_path[0].split('/')[-1]
         search_filename = search_filename[:-4]
 
-        print(f'FNAMES')
         print(self.svg_dataset.get_fnames())
 
         fnames = self.svg_dataset.get_fnames()
