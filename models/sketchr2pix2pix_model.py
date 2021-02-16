@@ -71,6 +71,7 @@ class SketchR2Pix2PixModel(BaseModel):
 
     def set_input(self, input):
         self.real_B = input['B']
+        print(f'real B dimensions {self.real_B.shape}')
         self.AB_path = input['A_paths']
 
     def forward(self):
