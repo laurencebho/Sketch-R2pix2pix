@@ -321,8 +321,8 @@ class SketchR2CNNTrain(BaseTrain):
         thickness = self.config['thickness']
         '''
 
-        points = data_batch['points3'].to(self.device)
-        points_offset = data_batch['points3_offset'].to(self.device)
+        points = data_batch['points3']
+        points_offset = data_batch['points3_offset']
         points_length = data_batch['points3_length']
 
         '''
@@ -347,10 +347,10 @@ class SketchR2CNNTrain(BaseTrain):
         report_image_freq = self.config['report_image_freq']
         thickness = self.config['thickness']
 
-        points = data_batch['points3'].to(self.device)
-        points_offset = data_batch['points3_offset'].to(self.device)
+        points = torch.from_numpy(data_batch['points3']).to(self.device)
+        points_offset = torch.from_numpy(data_batch['points3_offset']).to(self.device)
         points_length = data_batch['points3_length']
-        category = data_batch['category'].to(self.device)
+        category = torch.from_numpy(data_batch['category']).to(self.device)
 
         if report_image_freq > 0 and self.step_counters[mode] % report_image_freq == 0:
             images = Raster.to_image(points, 1.0, imgsize, thickness, device=self.device)
