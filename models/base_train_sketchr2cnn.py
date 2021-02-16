@@ -356,7 +356,7 @@ class SketchR2CNNTrain(BaseTrain):
             self.reporter.add_image('{}/sketch_input'.format(mode), image_grid, self.step_counters[mode])
         '''
 
-        _, _, images = self.net(batch_collate['points3'], batch_collate['points3_offset_list'], batch_collate['points3_length'])
+        _, _, images = self.net(batch_collate['points3'], batch_collate['points3_offset'], batch_collate['points3_length'])
         return images[0]
 
 
