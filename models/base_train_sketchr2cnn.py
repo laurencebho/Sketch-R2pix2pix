@@ -322,8 +322,8 @@ class SketchR2CNNTrain(BaseTrain):
         '''
 
         points = data_batch['points3']
-        points_offset = data_batch['points3_offset']
-        points_length = data_batch['points3_length']
+        points_offset = 0
+        points_length = len(points)
 
         '''
         if report_image_freq > 0 and self.step_counters[mode] % report_image_freq == 0:
