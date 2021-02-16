@@ -337,9 +337,17 @@ class SketchR2CNNTrain(BaseTrain):
         points3_offset_list.append(points3_offset)
 
 
-        points = points3_padded_list
-        points_offset = points3_offset_list
-        points_length = [len(points)]
+        batch_padded = {
+            'points3': points3_padded_list,
+            'points3_offset': points3_offset_list,
+            'points3_length': [len(points3_padded_list)],
+        }
+
+        sort_indices = np.argsort(-np.array(length_list))
+        batch_collate = dict()
+        for k, v in batch_padded.items():
+            sorted_arr = np.array([v[idx] for idx in sort_indices])
+            batch_collate[k] = torch.from_numpy(sorted_arr)
 
         '''
         if report_image_freq > 0 and self.step_counters[mode] % report_image_freq == 0:
@@ -348,7 +356,7 @@ class SketchR2CNNTrain(BaseTrain):
             self.reporter.add_image('{}/sketch_input'.format(mode), image_grid, self.step_counters[mode])
         '''
 
-        _, _, images = self.net(points, points_offset, points_length)
+        _, _, images = self.net(batch_collate['points3'], batch_collate['points3_offset_list'], batch_collate['points3_length'])
         return images[0]
 
 
