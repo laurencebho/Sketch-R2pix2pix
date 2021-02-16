@@ -320,22 +320,21 @@ class SketchR2CNNTrain(BaseTrain):
         report_image_freq = self.config['report_image_freq']
         thickness = self.config['thickness']
         '''
-        length_list = [len(item['points3']) for item in batch] 
+        length_list = [len(batch['points3'])] 
         max_length = max(length_list) 
 
         points3_padded_list = list()
         points3_offset_list = list()
-        for item in batch:
-            points3 = item['points3']
-            points3_length = len(points3)
-            points3_padded = np.zeros((max_length, 3), np.float32)
-            points3_padded[:, 2] = np.ones((max_length,), np.float32)
-            points3_padded[0:points3_length, :] = points3
-            points3_padded_list.append(points3_padded)
+        points3 = batch['points3']
+        points3_length = len(points3)
+        points3_padded = np.zeros((max_length, 3), np.float32)
+        points3_padded[:, 2] = np.ones((max_length,), np.float32)
+        points3_padded[0:points3_length, :] = points3
+        points3_padded_list.append(points3_padded)
 
-            points3_offset = np.copy(points3_padded)
-            points3_offset[1:points3_length, 0:2] = points3[1:, 0:2] - points3[:points3_length - 1, 0:2]
-            points3_offset_list.append(points3_offset)
+        points3_offset = np.copy(points3_padded)
+        points3_offset[1:points3_length, 0:2] = points3[1:, 0:2] - points3[:points3_length - 1, 0:2]
+        points3_offset_list.append(points3_offset)
 
 
         points = points3_padded_list
