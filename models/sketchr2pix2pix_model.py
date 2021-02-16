@@ -93,6 +93,8 @@ class SketchR2Pix2PixModel(BaseModel):
         svg_data = self.svg_dataset[svg_file_index]
 
         self.real_A = self.sketchr2cnn.get_image(svg_data)
+        self.real_A = self.real_A.unsqueeze(0)
+        print(f'real A dimensions {self.real_A.shape}')
         self.fake_B = self.netG(self.real_A)  # G(A)
 
 
