@@ -70,7 +70,7 @@ class SketchR2Pix2PixModel(BaseModel):
     
 
     def set_input(self, input):
-        self.real_B = input['B']
+        self.real_B = input['B'].to(self.device)
         print(f'real B dimensions {self.real_B.shape}')
         self.AB_path = input['A_paths']
 
@@ -92,8 +92,7 @@ class SketchR2Pix2PixModel(BaseModel):
             raise Exception(f'could not find matching file for {search_filename}')
         svg_data = self.svg_dataset[svg_file_index]
 
-        self.real_A = self.sketchr2cnn.get_image(svg_data)
-        self.real_A = torch.transpose(self.real_A, 0, 2)
+        self.real_A = self.sketchr2cnn.get_image(svg_data).to(self.device)
         self.real_A = self.real_A.unsqueeze(0)
         print(f'real A dimensions {self.real_A.shape}')
         self.fake_B = self.netG(self.real_A)  # G(A)
