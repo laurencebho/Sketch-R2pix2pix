@@ -66,7 +66,7 @@ class SketchR2Pix2PixModel(BaseModel):
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
         
-        self.svg_dataset = SketchyDataset('../datasets/sketchy.pkl', 'train')
+        self.svg_dataset = SketchyDataset('datasets/sketchy.pkl', 'train')
     
 
     def set_input(self, input):
@@ -93,6 +93,7 @@ class SketchR2Pix2PixModel(BaseModel):
         svg_data = self.svg_dataset[svg_file_index]
 
         self.real_A = self.sketchr2cnn.get_image(svg_data)
+        self.real_A = torch.transpose(self.real_A, 0, 2)
         self.real_A = self.real_A.unsqueeze(0)
         print(f'real A dimensions {self.real_A.shape}')
         self.fake_B = self.netG(self.real_A)  # G(A)
