@@ -3,6 +3,9 @@ from .base_model import BaseModel
 from . import networks
 from .base_train_sketchr2cnn import SketchR2CNNTrain
 from .sketchy_dataset import SketchyDataset
+from data.base_dataset import get_params, get_transform
+from PIL import Image
+import numpy as np
 
 
 class SketchR2Pix2PixModel(BaseModel):
@@ -92,7 +95,34 @@ class SketchR2Pix2PixModel(BaseModel):
             raise Exception(f'could not find matching file for {search_filename}')
         svg_data = self.svg_dataset[svg_file_index]
 
-        self.real_A = self.sketchr2cnn.get_image(svg_data).to(self.device)
+        t = self.sketchr2cnn.get_image(svg_data)
+        t = torch.round(t * 255)
+        t0, t1 = torch.split(t, [4, 4])
+        A0 = t0.cpu().numpy()
+        A1 = t1.cpu().numpy()
+
+        #split A into 8 separate greyscale images
+        greyscale_ims = []
+        for arr in [A0, A1]:
+            for i in range(arr.shape[2]):
+                greyscale_im = Image.fromarray(arr[:, :, i].astype('uint8'))
+                greyscale_ims.append(greyscale_im)
+            
+
+        transform_params = get_params(self.opt, (256, 256))
+        A_transform = get_transform(self.opt, transform_params, grayscale=True)
+
+        for i, greyscale_im in enumerate(greyscale_ims):
+            greyscale_ims[i] = A_transform(greyscale_im)
+    
+        #convert A images back into a single numpy array
+        for i, greyscale_im in enumerate(greyscale_ims):
+            if i == 0:
+                A = greyscale_im
+            else:
+                A = np.concatenate((A, greyscale_im), axis=0)
+
+
         self.real_A = self.real_A.unsqueeze(0)
         print(f'real A dimensions {self.real_A.shape}')
         self.fake_B = self.netG(self.real_A)  # G(A)
