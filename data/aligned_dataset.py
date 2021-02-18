@@ -40,10 +40,10 @@ class AlignedDataset(BaseDataset):
         B = Image.open(AB_path).convert('RGB')
 
         # transforms currently commented out to avoid any bugs with flipping
-        #transform_params_B = get_params(self.opt, B.size)
-        #B_transform = get_transform(self.opt, transform_params_B, grayscale=(self.output_nc == 1))
+        transform_params_B = get_params(self.opt, B.size)
+        B_transform = get_transform(self.opt, transform_params_B, grayscale=(self.output_nc == 1))
 
-        #B = B_transform(B)
+        B = B_transform(B)
 
         B = np.array(B)
 

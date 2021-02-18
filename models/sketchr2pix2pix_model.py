@@ -98,13 +98,13 @@ class SketchR2Pix2PixModel(BaseModel):
         t = self.sketchr2cnn.get_image(svg_data)
         t = torch.round(t * 255)
         t0, t1 = torch.split(t, [4, 4])
-        A0 = t0.cpu().numpy()
-        A1 = t1.cpu().numpy()
+        A0 = t0.cpu().detach().numpy()
+        A1 = t1.cpu().detach().numpy()
 
         #split A into 8 separate greyscale images
         greyscale_ims = []
         for arr in [A0, A1]:
-            for i in range(arr.shape[2]):
+            for i in range(arr.shape[0]):
                 greyscale_im = Image.fromarray(arr[:, :, i].astype('uint8'))
                 greyscale_ims.append(greyscale_im)
             
@@ -122,7 +122,7 @@ class SketchR2Pix2PixModel(BaseModel):
             else:
                 A = np.concatenate((A, greyscale_im), axis=0)
 
-
+        self.real_A = torch.from_numpy(A).to(self.device)
         self.real_A = self.real_A.unsqueeze(0)
         print(f'real A dimensions {self.real_A.shape}')
         self.fake_B = self.netG(self.real_A)  # G(A)
