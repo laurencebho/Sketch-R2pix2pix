@@ -43,7 +43,7 @@ if __name__ == '__main__':
             model.set_input(data)         # unpack data from dataset and apply preprocessing
 
             images = model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
-            grid = torchvision.utils.make_grid(images)
+            grid = torchvision.utils.make_grid(list(images))
             writer.add_image('images', grid, 0)
             writer.add_graph(model, images)
 
