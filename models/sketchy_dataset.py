@@ -38,8 +38,8 @@ class SketchyDataset(Dataset):
         '''
         can be removed completely - or pass 0 in as the index and it has no effect
         '''
-        print('performing set fold')
-        print(f'number of sketches: {self.num_sketches}')
+        #print('performing set fold')
+        #print(f'number of sketches: {self.num_sketches}')
         self.fold_idx = idx
         self.indices = list()
 
@@ -64,10 +64,10 @@ class SketchyDataset(Dataset):
 
     def __getitem__(self, idx):
         #debugging
-        print(f'index {idx}')
-        print(f'indices array length {len(self.indices)}')
-        print(f'num sketches {self.num_sketches}')
-        print(f'num fnames {len(self.fnames)}')
+        #print(f'index {idx}')
+        #print(f'indices array length {len(self.indices)}')
+        #print(f'num sketches {self.num_sketches}')
+        #print(f'num fnames {len(self.fnames)}')
 
 
         cid = 0 #we just use the same category the whole time
