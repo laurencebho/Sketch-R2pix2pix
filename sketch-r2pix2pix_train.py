@@ -3,8 +3,13 @@ from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
+from torch.utils.tensorboard import SummaryWriter
+import torchvision
 
 if __name__ == '__main__':
+
+    writer = SummaryWriter() #create tensorboard summary writer
+
     opt = TrainOptions().parse()   # get training options
 
     #TODO: replace with SketchR2CNN dataset
@@ -37,7 +42,10 @@ if __name__ == '__main__':
             #get a new vector sketch and the image it is paired with
             model.set_input(data)         # unpack data from dataset and apply preprocessing
 
-            model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
+            images = model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
+            grid = torchvision.utils.make_grid(images)
+            writer.add_image('images', grid, 0)
+            writer.add_graph(model, images)
 
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 save_result = total_iters % opt.update_html_freq == 0
