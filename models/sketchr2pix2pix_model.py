@@ -155,7 +155,7 @@ class SketchR2Pix2PixModel(BaseModel):
         # combine loss and calculate gradients
         self.loss_G = self.loss_G_GAN + self.loss_G_L1
         self.loss_G.backward()
-        return(self.real_A, self.real_B, self.fake_B)
+        return(self.real_B, self.fake_B)
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
