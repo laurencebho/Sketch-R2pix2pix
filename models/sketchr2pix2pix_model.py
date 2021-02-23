@@ -7,6 +7,9 @@ from data.base_dataset import get_params, get_transform
 from PIL import Image
 import numpy as np
 
+#for debugging only
+import random
+
 
 class SketchR2Pix2PixModel(BaseModel):
     @staticmethod
@@ -62,11 +65,12 @@ class SketchR2Pix2PixModel(BaseModel):
             self.criterionL1 = torch.nn.L1Loss()
 
             # get param list for the Generator Optimizer
-            optimizer_G_params = list(self.netG.parameters()) + list(self.sketchr2cnn.get_rnn_params())
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
-            self.optimizer_G = torch.optim.Adam(optimizer_G_params, lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_G = torch.optim.Adam(list(self.netG.parameters()), lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_RNN = torch.optim.Adam(list(self.sketchr2cnn.get_rnn_params()), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
+            self.optimizers.append(self.optimizer_RNN)
             self.optimizers.append(self.optimizer_D)
         
         self.svg_dataset = SketchyDataset('datasets/sketchy.pkl', 'train')
@@ -97,6 +101,8 @@ class SketchR2Pix2PixModel(BaseModel):
 
         t = self.sketchr2cnn.get_image(svg_data)
         t = torch.round(t * 255)
+        if random.random() < 0.05:
+            print(t)
         t0, t1 = torch.split(t, [4, 4])
         A0 = t0.cpu().detach().numpy()
         A1 = t1.cpu().detach().numpy()
@@ -166,6 +172,7 @@ class SketchR2Pix2PixModel(BaseModel):
         self.optimizer_D.step()          # update D's weights
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
+        self.optimizer_G.zero_grad()        # set G's gradients to zero
         self.optimizer_G.zero_grad()        # set G's gradients to zero
         images  = self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
