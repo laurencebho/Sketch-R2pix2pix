@@ -67,7 +67,7 @@ class SketchR2Pix2PixModel(BaseModel):
             # get param list for the Generator Optimizer
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
             self.optimizer_G = torch.optim.Adam(list(self.netG.parameters()), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_RNN = torch.optim.Adam(list(self.sketchr2cnn.get_rnn_params()), lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_RNN = torch.optim.Adam(list(self.sketchr2cnn.get_rnn_params()), lr=opt.lr*20, betas=(opt.beta1, 0.999))
             self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_RNN)
@@ -101,7 +101,7 @@ class SketchR2Pix2PixModel(BaseModel):
 
         t = self.sketchr2cnn.get_image(svg_data)
         t = torch.round(t * 255)
-        if random.random() < 0.05:
+        if random.random() < 0.001:
             print(t)
         t0, t1 = torch.split(t, [4, 4])
         A0 = t0.cpu().detach().numpy()
@@ -173,7 +173,8 @@ class SketchR2Pix2PixModel(BaseModel):
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
         self.optimizer_G.zero_grad()        # set G's gradients to zero
-        self.optimizer_G.zero_grad()        # set G's gradients to zero
+        self.optimizer_RNN.zero_grad()        # set G's gradients to zero
         images  = self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
+        self.optimizer_RNN.step()
         return images
