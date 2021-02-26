@@ -42,12 +42,13 @@ if __name__ == '__main__':
             #get a new vector sketch and the image it is paired with
             model.set_input(data)         # unpack data from dataset and apply preprocessing
 
-            images = model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
-            images = list(images)
-            for i, im in enumerate(images):
-              images[i] = images[i][0]
-            writer.add_image('fake_B', images[0], 0)
-            writer.add_image('real_B', images[1], 0)
+            loss_D, loss_G = model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
+            writer.add_scalar('discriminator loss',
+                            loss_D,
+                            epoch * len(dataset) + epoch_iter)
+            writer.add_scalar('generator loss',
+                            loss_G,
+                            epoch * len(dataset) + epoch_iter)
 
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 save_result = total_iters % opt.update_html_freq == 0

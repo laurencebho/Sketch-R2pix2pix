@@ -147,6 +147,7 @@ class SketchR2Pix2PixModel(BaseModel):
         # combine loss and calculate gradients
         self.loss_D = (self.loss_D_fake + self.loss_D_real) * 0.5
         self.loss_D.backward()
+        return self.loss_D
 
     def backward_G(self):
         """Calculate GAN and L1 loss for the generator"""
@@ -161,20 +162,20 @@ class SketchR2Pix2PixModel(BaseModel):
         # combine loss and calculate gradients
         self.loss_G = self.loss_G_GAN + self.loss_G_L1
         self.loss_G.backward()
-        return(self.real_B, self.fake_B)
+        return(self.loss_G)
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
         # update D
         self.set_requires_grad(self.netD, True)  # enable backprop for D
         self.optimizer_D.zero_grad()     # set D's gradients to zero
-        self.backward_D()                # calculate gradients for D
+        loss_D = self.backward_D()                # calculate gradients for D
         self.optimizer_D.step()          # update D's weights
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
         self.optimizer_G.zero_grad()        # set G's gradients to zero
         self.optimizer_RNN.zero_grad()        # set G's gradients to zero
-        images  = self.backward_G()                   # calculate graidents for G
+        loss_G  = self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
         self.optimizer_RNN.step()
-        return images
+        return loss_D, loss_G
