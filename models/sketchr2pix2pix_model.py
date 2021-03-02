@@ -179,3 +179,17 @@ class SketchR2Pix2PixModel(BaseModel):
         self.optimizer_G.step()             # udpate G's weights
         self.optimizer_RNN.step()
         return loss_D, loss_G
+
+
+def get_param_means(self):
+    '''
+    return the mean value of each parameter for the RNN
+    '''
+    rnn_means = []
+    for param in self.sketchr2cnn.get_rnn_params():
+        rnn_means.append(torch.mean(param))
+
+    g_means = []
+    for param in self.netG.parameters():
+        g_means.append(torch.mean(param))
+    return rnn_means, g_means

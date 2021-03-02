@@ -50,6 +50,19 @@ if __name__ == '__main__':
                             loss_G,
                             epoch * len(dataset) + epoch_iter)
 
+            rnn_param_means, g_param_means = model.get_param_means()
+
+            for i, param in enumerate(rnn_param_means):
+                writer.add_scalar(f'RNN param mean {i}',
+                                loss_D,
+                                epoch * len(dataset) + epoch_iter)
+
+            for i, param in enumerate(g_param_means):
+                writer.add_scalar(f'G param mean {i}',
+                                loss_D,
+                                epoch * len(dataset) + epoch_iter)
+
+
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 save_result = total_iters % opt.update_html_freq == 0
                 model.compute_visuals()
