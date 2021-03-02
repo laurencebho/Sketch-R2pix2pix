@@ -111,9 +111,9 @@ class SketchR2Pix2PixModel(BaseModel):
         greyscale_ims = []
         for arr in [A0, A1]:
             for i in range(arr.shape[0]):
-                greyscale_im = Image.fromarray(arr[:, :, i].astype('uint8'))
+                greyscale_im = Image.fromarray(arr[i, :, :])
                 greyscale_ims.append(greyscale_im)
-            
+
 
         transform_params = get_params(self.opt, (256, 256))
         A_transform = get_transform(self.opt, transform_params, grayscale=True)
