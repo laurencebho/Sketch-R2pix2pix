@@ -100,7 +100,7 @@ class SketchR2Pix2PixModel(BaseModel):
         svg_data = self.svg_dataset[svg_file_index]
 
         t = self.sketchr2cnn.get_image(svg_data)
-        t = torch.round(t * 255)
+        t = t * 255
         if random.random() < 0.001:
             print(t)
         t0, t1 = torch.split(t, [4, 4])
