@@ -120,6 +120,7 @@ class SketchR2CNN(BaseSketchR2CNNModel):
 
     
     def get_images(self, points, points_offset, lengths):
+        #currently not being called
         intensities, _ = self.rnn(points_offset, lengths)
         images = RasterIntensityFunc.apply(points, intensities, self.img_size, self.thickness, self.eps, self.device)
         if images.size(1) == 1:
@@ -129,8 +130,9 @@ class SketchR2CNN(BaseSketchR2CNNModel):
 
     def __call__(self, points, points_offset, lengths):
         intensities, _ = self.rnn(points_offset, lengths)
-
-        images = RasterIntensityFunc.apply(points, intensities, self.img_size, self.thickness, self.eps, self.device)
+        ones = torch.ones(intensities.shape).to(self.device)
+        new_intensities = torch.sub(ones, intensities)
+        images = RasterIntensityFunc.apply(points, new_intensities, self.img_size, self.thickness, self.eps, self.device)
         if images.size(1) == 1:
             images = images.repeat(1, 3, 1, 1)
         cnnfeat = self.cnn(images)
