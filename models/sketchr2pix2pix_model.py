@@ -101,37 +101,12 @@ class SketchR2Pix2PixModel(BaseModel):
 
         t = self.sketchr2cnn.get_image(svg_data)
         t = t * 255
-        if random.random() < 0.001:
-            print(t)
-        t0, t1 = torch.split(t, [4, 4])
-        A0 = t0.cpu().detach().numpy()
-        A1 = t1.cpu().detach().numpy()
-
-        #split A into 8 separate greyscale images
-        greyscale_ims = []
-        for arr in [A0, A1]:
-            for i in range(arr.shape[0]):
-                greyscale_im = Image.fromarray(arr[i, :, :])
-                greyscale_ims.append(greyscale_im)
-
-
-        transform_params = get_params(self.opt, (256, 256))
-        A_transform = get_transform(self.opt, transform_params, grayscale=True)
-
-        for i, greyscale_im in enumerate(greyscale_ims):
-            greyscale_ims[i] = A_transform(greyscale_im)
-    
-        #convert A images back into a single numpy array
-        for i, greyscale_im in enumerate(greyscale_ims):
-            if i == 0:
-                A = greyscale_im
-            else:
-                A = np.concatenate((A, greyscale_im), axis=0)
-
-        self.real_A = torch.from_numpy(A).to(self.device)
-        self.real_A = self.real_A.unsqueeze(0)
+        t = t.unsqueeze(0)
+        t = torch.nn.functional.interpolate(t,size=(256,256), mode='bilinear')     
+        self.real_A = t
         #print(f'real A dimensions {self.real_A.shape}')
         self.fake_B = self.netG(self.real_A)  # G(A)
+
 
 
     def backward_D(self):
@@ -146,7 +121,7 @@ class SketchR2Pix2PixModel(BaseModel):
         self.loss_D_real = self.criterionGAN(pred_real, True)
         # combine loss and calculate gradients
         self.loss_D = (self.loss_D_fake + self.loss_D_real) * 0.5
-        self.loss_D.backward()
+        self.loss_D.backward(retain_graph=True)
         return self.loss_D
 
     def backward_G(self):
