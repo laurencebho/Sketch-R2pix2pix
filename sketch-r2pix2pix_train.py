@@ -50,16 +50,16 @@ if __name__ == '__main__':
                             loss_G,
                             epoch * len(dataset) + epoch_iter)
 
-            rnn_param_means, g_param_means = model.get_param_means()
+            rnn_param_grads, g_param_grads = model.get_param_grads()
 
-            for i, param in enumerate(rnn_param_means):
-                writer.add_scalar(f'RNN param mean {i}',
-                                loss_D,
+            for i, param in enumerate(rnn_param_grads):
+                writer.add_scalar(f'RNN param gradient {i}',
+                                param,
                                 epoch * len(dataset) + epoch_iter)
 
-            for i, param in enumerate(g_param_means):
-                writer.add_scalar(f'G param mean {i}',
-                                loss_D,
+            for i, param in enumerate(g_param_grads):
+                writer.add_scalar(f'G param gradient {i}',
+                                param,
                                 epoch * len(dataset) + epoch_iter)
 
 
