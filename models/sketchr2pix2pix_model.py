@@ -158,13 +158,15 @@ class SketchR2Pix2PixModel(BaseModel):
 
     def get_param_grads(self):
         '''
-        return the mean value of each parameter for the RNN
+        return the mean value of each parameter gradient for the RNN
         '''
         rnn_grads = []
         for param in self.sketchr2cnn.get_rnn_params():
-            rnn_grads.append(param.grad.view(-1))
+            rnn_grads.append(torch.mean(param.grad.view(-1)))
+            break
 
         g_grads = []
         for param in self.netG.parameters():
-            g_grads.append(param.grad.view(-1))
+            g_grads.append(torch.mean(param.grad.view(-1)))
+            break
         return rnn_grads, g_grads
