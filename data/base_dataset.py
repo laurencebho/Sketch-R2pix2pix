@@ -98,11 +98,13 @@ def get_transform(opt, params=None, grayscale=False, method=Image.BICUBIC, conve
     if opt.preprocess == 'none':
         transform_list.append(transforms.Lambda(lambda img: __make_power_2(img, base=4, method=method)))
 
+    '''
     if not opt.no_flip:
         if params is None:
             transform_list.append(transforms.RandomHorizontalFlip())
         elif params['flip']:
             transform_list.append(transforms.Lambda(lambda img: __flip(img, params['flip'])))
+    '''
 
     if convert:
         transform_list += [transforms.ToTensor()]
