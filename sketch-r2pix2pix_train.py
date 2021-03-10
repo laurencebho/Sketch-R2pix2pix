@@ -2,9 +2,12 @@ import time
 from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
-from util.visualizer import Visualizer
+from util.visualizer import Visualizer, save_images
+from util import html
 from torch.utils.tensorboard import SummaryWriter
 import torchvision
+import random
+import os
 
 if __name__ == '__main__':
 
@@ -87,3 +90,21 @@ if __name__ == '__main__':
             model.save_networks(epoch)
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))
+
+
+    #test the model - saves images in results directory
+    rand_target = round(100 / dataset_size)
+    web_dir = os.path.join(opt.results_dir, opt.name)  # define the website directory
+    if opt.load_iter > 0:  # load_iter is 0 by default
+        web_dir = f'{web_dir}'
+    print('creating web directory', web_dir)
+    webpage = html.HTML(web_dir, f'{web_dir}')
+
+    for i, data in enumerate(dataset):
+        model.set_input(data)  # unpack data from data loader
+        model.test()           # run inference
+        visuals = model.get_current_visuals()  # get image results
+        img_path = model.get_image_paths()     # get image paths
+        print('processing (%04d)-th image... %s' % (i, img_path))
+        save_images(webpage, visuals, img_path, aspect_ratio=1.0, width=opt.display_winsize)
+    webpage.save()  # save the HTML
