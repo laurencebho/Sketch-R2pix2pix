@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     #test the model - saves images in results directory
     rand_target = round(100 / dataset_size)
-    web_dir = os.path.join(opt.results_dir, opt.name)  # define the website directory
+    web_dir = os.path.join('./results', opt.name)  # define the website directory
     if opt.load_iter > 0:  # load_iter is 0 by default
         web_dir = f'{web_dir}'
     print('creating web directory', web_dir)
