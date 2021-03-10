@@ -81,6 +81,9 @@ class SketchR2Pix2PixModel(BaseModel):
         #print(f'real B dimensions {self.real_B.shape}')
         self.AB_path = input['A_paths']
 
+        #added to make the test code to save some images work
+        self.image_paths = input['A_paths']
+
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         search_filename = self.AB_path[0].split('/')[-1]
