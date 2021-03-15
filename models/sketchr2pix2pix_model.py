@@ -146,7 +146,7 @@ class SketchR2Pix2PixModel(BaseModel):
         return(self.loss_G)
 
     def optimize_parameters(self):
-        while len(self.real_As > 0):
+        while len(self.real_As) > 0:
             self.forward()                   # compute fake images: G(A)
             # update D
             self.set_requires_grad(self.netD, True)  # enable backprop for D
