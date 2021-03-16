@@ -76,7 +76,7 @@ class SketchyDataset(Dataset):
                     pts_xy = SketchUtil.normalization(pts_xy)
                 if random.uniform(0, 1) > 0.5:
                     pts_xy = SketchUtil.random_affine_transform(pts_xy, scale_factor=0.2, rot_thresh=40.0)
-            pts_xy = SketchUtil.random_horizontal_flip(pts_xy)
+            #pts_xy = SketchUtil.random_horizontal_flip(pts_xy)
             sid_points[:, 0:2] = pts_xy
             if self.drop_strokes:
                 sid_points = self._random_drop_strokes(sid_points)
