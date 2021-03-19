@@ -109,3 +109,24 @@ def mkdir(path):
     """
     if not os.path.exists(path):
         os.makedirs(path)
+
+
+def save_mean_image(multi_channel_im, save_image_path):
+    im = tensor2im(multi_channel_im)
+    channels, m, n = im.shape
+    mean_im = np.zeros((1, m, n))
+    for i in range(m):
+        for j in range(n):
+            mean_im [0, i, j] = np.mean(im[:, i, j])
+
+    save_image(mean_im, save_image_path)
+
+
+def save_variance_image(multi_channel_im, save_image_path):
+    im = tensor2im(multi_channel_im)
+    channels, m, n = im.shape
+    var_im = np.zeros((1, m, n))
+    for i in range(m):
+        for j in range(n):
+            var_im [0, i, j] = np.var(im[:, i, j])
+    save_image(var_im, save_image_path)
