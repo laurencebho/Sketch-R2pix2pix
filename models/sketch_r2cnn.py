@@ -131,8 +131,8 @@ class SketchR2CNN(BaseSketchR2CNNModel):
     def __call__(self, points, points_offset, lengths):
         intensities, _ = self.rnn(points_offset, lengths)
         ones = torch.ones(intensities.shape).to(self.device)
-        #new_intensities = torch.sub(ones, intensities)
-        new_intensities = torch.rand(intensities.shape)
+        new_intensities = torch.sub(ones, intensities)
+        #new_intensities = torch.rand(intensities.shape)
         images = RasterIntensityFunc.apply(points, new_intensities, self.img_size, self.thickness, self.eps, self.device)
         if images.size(1) == 1:
             images = images.repeat(1, 3, 1, 1)
