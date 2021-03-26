@@ -581,7 +581,7 @@ class NLayerDiscriminator(nn.Module):
         main_model_seq = [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
         self.main_model = nn.Sequential(*main_model_seq)  # output 1 channel prediction map
         
-        discrim_seq = [nn.Flatten(), nn.Linear(ndf * nf_mult, 1)]
+        discrim_seq = [nn.Conv2d(ndf * nf_mult, 32, kernel_size=kw, stride=1, padding=padw), nn.Flatten(), nn.Linear(32 * 31 * 31, 49)]
         self.discrim = nn.Sequential(*discrim_seq)
     
 

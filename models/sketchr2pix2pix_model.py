@@ -150,7 +150,7 @@ class SketchR2Pix2PixModel(BaseModel):
         #print(pred_category_flattened.shape)
         #self.nll_loss = ce_loss(pred_category_flattened, self.correct_category)
 
-        self.nll_loss = ce_loss(pred_category, self.correct_category)
+        self.nll_loss_D = ce_loss(pred_category, self.correct_category)
 
         self.loss_D_fake = self.criterionGAN(pred_fake, False)
         # Real
@@ -158,7 +158,7 @@ class SketchR2Pix2PixModel(BaseModel):
         pred_real = self.netD(real_AB)[0]
         self.loss_D_real = self.criterionGAN(pred_real, True)
         # combine loss and calculate gradients
-        self.loss_D = (self.loss_D_fake + self.loss_D_real + self.nll_loss) * 0.5
+        self.loss_D = (self.loss_D_fake + self.loss_D_real + self.nll_loss_D) * 0.5
         self.loss_D.backward(retain_graph=True)
         return self.loss_D
 
@@ -168,12 +168,17 @@ class SketchR2Pix2PixModel(BaseModel):
 
         # First, G(A) should fake the discriminator
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
-        pred_fake = self.netD(fake_AB)[0]
+        pred_fake, pred_category = self.netD(fake_AB)
+
+
+        ce_loss = torch.nn.CrossEntropyLoss()
+        self.nll_loss_G = ce_loss(pred_category, self.correct_category)
+
         self.loss_G_GAN = self.criterionGAN(pred_fake, True)
         # Second, G(A) = B
         self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # combine loss and calculate gradients
-        self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.nll_loss #add nll loss too
+        self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.nll_loss_G #add nll loss too
         self.loss_G.backward()
         return(self.loss_G)
 
