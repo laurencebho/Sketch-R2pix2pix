@@ -539,7 +539,7 @@ class UnetSkipConnectionBlock(nn.Module):
 class NLayerDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
 
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d):
+    def __init__(self, input_nc, ndf=64, n_layers=6, norm_layer=nn.BatchNorm2d):
         """Construct a PatchGAN discriminator
 
         Parameters:
@@ -581,7 +581,7 @@ class NLayerDiscriminator(nn.Module):
         main_model_seq = [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
         self.main_model = nn.Sequential(*main_model_seq)  # output 1 channel prediction map
         
-        discrim_seq = [nn.Conv2d(ndf * nf_mult, 32, kernel_size=kw, stride=1, padding=padw), nn.Flatten(), nn.Linear(32 * 31 * 31, 49)]
+        discrim_seq = [nn.Conv2d(ndf * nf_mult, 32, kernel_size=kw, stride=1, padding=padw), nn.Flatten(), nn.Linear(32 * 30 * 30, 49)]
         self.discrim = nn.Sequential(*discrim_seq)
     
 
