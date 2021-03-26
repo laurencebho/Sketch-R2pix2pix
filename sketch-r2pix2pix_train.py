@@ -3,7 +3,7 @@ from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer, save_images
-from util import html, save_mean_image, save_variance_image
+from util import html #, save_mean_image, save_variance_image
 from torch.utils.tensorboard import SummaryWriter
 import torchvision
 import random

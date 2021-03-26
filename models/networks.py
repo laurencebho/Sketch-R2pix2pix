@@ -554,41 +554,40 @@ class NLayerDiscriminator(nn.Module):
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
 
-        for i in range(2):
-            kw = 4
-            padw = 1
-            sequence = [nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw), nn.LeakyReLU(0.2, True)]
-            nf_mult = 1
-            nf_mult_prev = 1
-            for n in range(1, n_layers):  # gradually increase the number of filters
-                nf_mult_prev = nf_mult
-                nf_mult = min(2 ** n, 8)
-                sequence += [
-                    nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=use_bias),
-                    norm_layer(ndf * nf_mult),
-                    nn.LeakyReLU(0.2, True)
-                ]
-
+        kw = 4
+        padw = 1
+        sequence = [nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw), nn.LeakyReLU(0.2, True)]
+        nf_mult = 1
+        nf_mult_prev = 1
+        for n in range(1, n_layers):  # gradually increase the number of filters
             nf_mult_prev = nf_mult
-            nf_mult = min(2 ** n_layers, 8)
+            nf_mult = min(2 ** n, 8)
             sequence += [
-                nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
+                nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=use_bias),
                 norm_layer(ndf * nf_mult),
                 nn.LeakyReLU(0.2, True)
             ]
 
-            if i == 0:
-                sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
-                self.model = nn.Sequential(*sequence)
-            else:
-                #classifier for the 49 sketchygan categories
-                sequence += [nn.Conv2d(ndf * nf_mult, 49, kernel_size=kw, stride=1, padding=padw), nn.LogSoftmax()]  # output 1 channel prediction map
+        nf_mult_prev = nf_mult
+        nf_mult = min(2 ** n_layers, 8)
+        sequence += [
+            nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
+            norm_layer(ndf * nf_mult),
+            nn.LeakyReLU(0.2, True)
+        ]
+
+        self.penultimate = nn.Sequential(*sequence)
+
+        main_model_seq = [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
+        self.main_model = nn.Sequential(*main_model_seq)  # output 1 channel prediction map
         
-                self.classifier = self.model = nn.Sequential(*sequence)
+        discrim_seq = [nn.Flatten(), nn.Linear(ndf * nf_mult, 1)]
+        self.discrim = nn.Sequential(*discrim_seq)
+    
 
     def forward(self, input):
         """Standard forward."""
-        return self.model(input), self.classifier(input)
+        return self.main_model(self.penultimate(input)), self.discrim(self.penultimate(input))
 
 
 class PixelDiscriminator(nn.Module):
