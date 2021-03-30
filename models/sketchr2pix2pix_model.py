@@ -74,6 +74,29 @@ class SketchR2Pix2PixModel(BaseModel):
             self.optimizers.append(self.optimizer_D)
         
         self.svg_dataset = SketchyDataset('datasets/sketchy.pkl', 'train')
+
+        #dictionary of sketchy_gan categories
+        self.category_dict = {'n04398044': ('teapot', 0), 'invalid.txt': ('teapot', 0), 'checked.txt': ('teapot', 0),
+            'n02503517': ('elephant', 1), 'n03147509': ('cup', 2), 'n03063073': ('cup', 2), 'n02976123': ('knife', 3),
+            'n03624134': ('knife', 3), 'n02973904': ('knife', 3), 'n02980441': ('castle', 4), 'n02109525': ('dog', 5),
+            'n02106662': ('dog', 5), 'n02103406': ('dog', 5), 'n02374451': ('horse', 6), 'n07697537': ('hotdog', 7),
+            'n03891251': ('bench', 8), 'n02828884': ('bench', 8), 'n02948072': ('candle', 9), 'n04148054': ('scissors', 10),
+            'n03044934': ('scissors', 10), 'n04090263': ('rifle', 11), 'n02907391': ('rifle', 11), 'n03416775': ('rifle', 11),
+            'n02749479': ('rifle', 11), 'n07739125': ('apple', 12), 'n02691156': ('airplane', 13), 'n02439033': ('giraffe', 14),
+            'n02121620': ('cat', 15), 'n12998815': ('mushroom', 16), 'n12997919': ('mushroom', 16), 'n03544143': ('hourglass', 17),
+            'n01887787': ('cow', 18), 'n02404432': ('cow', 18), 'n02403454': ('cow', 18), 'n02404186': ('cow', 18),
+            'n02406174': ('cow', 18), 'n07873807': ('pizza', 19), 'n07695742': ('pretzel', 20), 'n02395406': ('pig', 21),
+            'n02738535': ('chair', 22), 'n03001627': ('chair', 22), 'n07745940': ('strawberry', 23), 'n07753592': ('banana', 24),
+            'n09472597': ('volcano', 25), 'n01770393': ('scorpion', 26), 'n02219486': ('ant', 27), 'n02206856': ('bee', 28), 'n04256520': ('couch', 29),
+            'n02317335': ('starfish', 30), 'n02129165': ('lion', 31), 'n02346627': ('hedgehog', 32), 'n01872401': ('hedgehog', 32),
+            'n01894207': ('hedgehog', 32), 'n02950826': ('cannon', 33), 'n02391049': ('zebra', 34), 'n09288635': ('geyser', 35),
+            'n02411705': ('sheep', 36), 'n02412080': ('sheep', 36), 'n02413131': ('sheep', 36), 'n02414290': ('sheep', 36),
+            'n02412210': ('sheep', 36), 'n04389033': ('tank', 37), 'n01910747': ('jellyfish', 38), 'n03790512': ('motorcycle', 39),
+            'n07753275': ('pineapple', 40), 'n03633091': ('spoon', 41), 'n04597913': ('spoon', 41), 'n04350769': ('spoon', 41),
+            'n04284002': ('spoon', 41), 'n02834778': ('bicycle', 42), 'n04126066': ('bicycle', 42), 'n03792782': ('bicycle', 42),
+            'n03481172': ('hammer', 43), 'n02131653': ('bear', 44), 'n02129604': ('tiger', 45), 'n01944390': ('snail', 46),
+            'n03028079': ('church', 47), 'n02824448': ('bell', 48), 'n03028596': ('bell', 48)
+            }
     
 
     def set_input(self, input):
@@ -89,6 +112,12 @@ class SketchR2Pix2PixModel(BaseModel):
         search_filename = self.AB_path[0].split('/')[-1]
         search_filename = search_filename[:-4]
 
+        search_category = search_filename.split('_')[0]
+
+        #a tensor containing just one value which is the category index
+        #correct_category = torch.LongTensor([self.category_dict[search_category][1]]).to(self.device)
+        correct_category = self.category_dict[search_category][1]
+        self.correct_category = torch.LongTensor([correct_category]).to(self.device)
         fnames = self.svg_dataset.get_fnames()
         svg_file_index = None
 
@@ -119,14 +148,25 @@ class SketchR2Pix2PixModel(BaseModel):
         """Calculate GAN loss for the discriminator"""
         # Fake; stop backprop to the generator by detaching fake_B
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
-        pred_fake = self.netD(fake_AB.detach())
+        pred_fake, pred_category = self.netD(fake_AB.detach())
+
+        ce_loss = torch.nn.CrossEntropyLoss()
+
+        #self.nll_loss = torch.nn.functional.nll_loss(pred_category, self.correct_category)
+
+        #pred_category_flattened = pred_category.sum(3).sum(2)
+        #print(pred_category_flattened.shape)
+        #self.nll_loss = ce_loss(pred_category_flattened, self.correct_category)
+
+        self.nll_loss_D = ce_loss(pred_category, self.correct_category)
+
         self.loss_D_fake = self.criterionGAN(pred_fake, False)
         # Real
         real_AB = torch.cat((self.real_A, self.real_B), 1)
-        pred_real = self.netD(real_AB)
+        pred_real = self.netD(real_AB)[0]
         self.loss_D_real = self.criterionGAN(pred_real, True)
         # combine loss and calculate gradients
-        self.loss_D = (self.loss_D_fake + self.loss_D_real) * 0.5
+        self.loss_D = (self.loss_D_fake + self.loss_D_real + self.nll_loss_D) * 0.5
         self.loss_D.backward(retain_graph=True)
         return self.loss_D
 
@@ -136,12 +176,17 @@ class SketchR2Pix2PixModel(BaseModel):
 
         # First, G(A) should fake the discriminator
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
-        pred_fake = self.netD(fake_AB)
+        pred_fake, pred_category = self.netD(fake_AB)
+
+
+        ce_loss = torch.nn.CrossEntropyLoss()
+        self.nll_loss_G = ce_loss(pred_category, self.correct_category)
+
         self.loss_G_GAN = self.criterionGAN(pred_fake, True)
         # Second, G(A) = B
         self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # combine loss and calculate gradients
-        self.loss_G = self.loss_G_GAN + self.loss_G_L1
+        self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.nll_loss_G #add nll loss too
         self.loss_G.backward()
         return(self.loss_G)
 

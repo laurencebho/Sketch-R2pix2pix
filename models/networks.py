@@ -192,6 +192,7 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
     net = None
     norm_layer = get_norm_layer(norm_type=norm)
 
+    #modifying the basic option to add category prediction
     if netD == 'basic':  # default PatchGAN classifier
         net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer)
     elif netD == 'n_layers':  # more options
@@ -538,7 +539,7 @@ class UnetSkipConnectionBlock(nn.Module):
 class NLayerDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
 
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d):
+    def __init__(self, input_nc, ndf=64, n_layers=8, norm_layer=nn.BatchNorm2d):
         """Construct a PatchGAN discriminator
 
         Parameters:
@@ -575,12 +576,18 @@ class NLayerDiscriminator(nn.Module):
             nn.LeakyReLU(0.2, True)
         ]
 
-        sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
-        self.model = nn.Sequential(*sequence)
+        self.penultimate = nn.Sequential(*sequence)
+
+        main_model_seq = [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
+        self.main_model = nn.Sequential(*main_model_seq)  # output 1 channel prediction map
+        
+        discrim_seq = [nn.Conv2d(ndf * nf_mult, 32, kernel_size=kw, stride=1, padding=padw), nn.Flatten(), nn.Linear(32 * 30 * 30, 49)]
+        self.discrim = nn.Sequential(*discrim_seq)
+    
 
     def forward(self, input):
         """Standard forward."""
-        return self.model(input)
+        return self.main_model(self.penultimate(input)), self.discrim(self.penultimate(input))
 
 
 class PixelDiscriminator(nn.Module):
