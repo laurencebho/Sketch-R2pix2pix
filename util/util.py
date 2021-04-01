@@ -63,7 +63,10 @@ def save_image(image_numpy, image_path, aspect_ratio=1.0):
     else:
         print('normal channel image')
         image_pil = Image.fromarray(image_numpy)
-    h, w, _ = image_numpy.shape
+    if len(image_numpy.shape) > 2:
+        h, w, _ = image_numpy.shape
+    else:
+        h, w = image_numpy.shape
 
     if aspect_ratio > 1.0:
         image_pil = image_pil.resize((h, int(w * aspect_ratio)), Image.BICUBIC)
@@ -113,20 +116,29 @@ def mkdir(path):
 
 def save_mean_image(multi_channel_im, save_image_path):
     im = tensor2im(multi_channel_im)
-    channels, m, n = im.shape
-    mean_im = np.zeros((1, m, n))
+    m, n, channels = im.shape
+    mean_im = np.zeros((m, n, 1))
     for i in range(m):
         for j in range(n):
-            mean_im [0, i, j] = np.mean(im[:, i, j])
+            mean_im[i, j, 0] = np.mean(im[i, j, :])
+    
+    mean_im = mean_im / np.max(mean_im)
+    mean_im = mean_im * 255
+    mean_im = tensor2im(mean_im)
 
     save_image(mean_im, save_image_path)
 
 
 def save_variance_image(multi_channel_im, save_image_path):
     im = tensor2im(multi_channel_im)
-    channels, m, n = im.shape
-    var_im = np.zeros((1, m, n))
+    m, n, channels = im.shape
+    var_im = np.zeros((m, n, 1))
     for i in range(m):
         for j in range(n):
-            var_im [0, i, j] = np.var(im[:, i, j])
+            var_im[i, j, 0] = np.var(im[i, j, :])
+
+    var_im = var_im / np.max(var_im)
+    var_im = var_im * 255
+    var_im = tensor2im(var_im)
+
     save_image(var_im, save_image_path)
