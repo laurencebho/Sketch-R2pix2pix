@@ -118,7 +118,6 @@ class SketchR2Pix2PixModel(BaseModel):
         #correct_category = torch.LongTensor([self.category_dict[search_category][1]]).to(self.device)
         correct_category = self.category_dict[search_category][1]
         self.correct_category = torch.LongTensor([correct_category]).to(self.device)
-        fnames = self.svg_dataset.get_fnames()
         svg_file_index = None
 
         matching_sketch_data = self.svg_dataset.match_sketches(search_filename)
@@ -222,16 +221,17 @@ class SketchR2Pix2PixModel(BaseModel):
 
     def get_param_grads(self):
         '''
-        return the mean value of each parameter gradient for the RNN
+        return the mean value of the gradients for the
+        generator and RNN
         '''
         rnn_grads = []
         for param in self.sketchr2cnn.get_rnn_params():
             rnn_grads.append(torch.mean(param.grad.view(-1)))
-        rnn_mean = np.mean(rnn_grads)
+        rnn_mean = np.mean([g.cpu().numpy() for g in rnn_grads])
 
         g_grads = []
         for param in self.netG.parameters():
             g_grads.append(torch.mean(param.grad.view(-1)))
-        g_mean = np.mean(g_grads)
-        
+        g_mean = np.mean([g.cpu().numpy() for g in g_grads])
+         
         return rnn_mean, g_mean

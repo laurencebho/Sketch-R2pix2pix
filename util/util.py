@@ -58,11 +58,15 @@ def save_image(image_numpy, image_path, aspect_ratio=1.0):
     print(f'Save image shape: {image_numpy.shape}')
     print(f'Max value in image: {image_numpy.max()}')
 
-    if image_numpy.shape[2] > 3:
-        image_pil = Image.fromarray(image_numpy[:, :, :3].astype(np.uint8))
+    if len(image_numpy.shape) > 2:
+        if image_numpy.shape[2] > 3:
+            image_pil = Image.fromarray(image_numpy[:, :, :3].astype(np.uint8))
+        else:
+            print('normal channel image')
+            image_pil = Image.fromarray(image_numpy)
     else:
-        print('normal channel image')
         image_pil = Image.fromarray(image_numpy)
+
     if len(image_numpy.shape) > 2:
         h, w, _ = image_numpy.shape
     else:
@@ -126,7 +130,7 @@ def save_mean_image(multi_channel_im, save_image_path):
     mean_im = mean_im * 255
     mean_im = tensor2im(mean_im)
 
-    save_image(mean_im, save_image_path)
+    save_image(mean_im[:, :, 0], save_image_path)
 
 
 def save_variance_image(multi_channel_im, save_image_path):
@@ -141,4 +145,4 @@ def save_variance_image(multi_channel_im, save_image_path):
     var_im = var_im * 255
     var_im = tensor2im(var_im)
 
-    save_image(var_im, save_image_path)
+    save_image(var_im[:, :, 0], save_image_path)
