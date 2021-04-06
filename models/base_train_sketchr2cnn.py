@@ -77,7 +77,8 @@ def train_data_collate(batch):
 
 class BaseTrain(object):
 
-    def __init__(self):
+    def __init__(self, intensity_channels):
+        self.intensity_channels = intensity_channels
         self.config = self._parse_args()
 
         self.modes = ['train', 'valid']
@@ -300,7 +301,6 @@ class SketchR2CNNTrain(BaseTrain):
     def create_model(self, num_categories):
         dropout = self.config['dropout']
         imgsize = self.config['imgsize']
-        intensity_channels = self.config['intensity_channels']
         model_fn = self.config['model_fn']
         thickness = self.config['thickness']
 
@@ -310,7 +310,7 @@ class SketchR2CNNTrain(BaseTrain):
                            imgsize,
                            thickness,
                            num_categories,
-                           intensity_channels=intensity_channels,
+                           intensity_channels=self.intensity_channels,
                            device=self.device)
 
     def get_image(self, batch):

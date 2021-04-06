@@ -2,8 +2,8 @@ import time
 from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
-from util.visualizer import Visualizer, save_images
-from util import html #, save_mean_image, save_variance_image
+from util.visualizer import Visualizer, save_images, save_mean_and_var_images
+from util import html
 from torch.utils.tensorboard import SummaryWriter
 import torchvision
 import random
@@ -45,25 +45,44 @@ if __name__ == '__main__':
             #get a new vector sketch and the image it is paired with
             model.set_input(data)         # unpack data from dataset and apply preprocessing
 
-            loss_D, loss_G = model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
-            writer.add_scalar('discriminator loss',
+            loss_D, individual_D_losses, loss_G, individual_G_losses = model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
+            writer.add_scalar('Discriminator Loss',
                             loss_D,
                             epoch * len(dataset) + epoch_iter)
-            writer.add_scalar('generator loss',
+            writer.add_scalar('Discriminator Fake Image Loss',
+                            individual_D_losses[0],
+                            epoch * len(dataset) + epoch_iter)
+            writer.add_scalar('Discriminator Real Image Loss',
+                            individual_D_losses[1],
+                            epoch * len(dataset) + epoch_iter)
+            if len(individual_D_losses) == 3:
+                writer.add_scalar('Discriminator Classification Loss', # category loss
+                                individual_D_losses[2],
+                                epoch * len(dataset) + epoch_iter)
+            
+            writer.add_scalar('Generator Loss',
                             loss_G,
                             epoch * len(dataset) + epoch_iter)
+            writer.add_scalar('GAN Loss',
+                            individual_G_losses[0],
+                            epoch * len(dataset) + epoch_iter)
+            writer.add_scalar('L1 Loss',
+                            individual_G_losses[1],
+                            epoch * len(dataset) + epoch_iter)
+            if len(individual_D_losses) == 3:
+                writer.add_scalar('Generator Classification Loss', # category loss
+                                individual_G_losses[2],
+                                epoch * len(dataset) + epoch_iter)
 
             rnn_param_grads, g_param_grads = model.get_param_grads()
 
-            for i, param in enumerate(rnn_param_grads):
-                writer.add_scalar(f'RNN param gradient {i}',
-                                param,
-                                epoch * len(dataset) + epoch_iter)
+            writer.add_scalar(f'RNN parameter gradient mean',
+                            rnn_param_grads,
+                            epoch * len(dataset) + epoch_iter)
 
-            for i, param in enumerate(g_param_grads):
-                writer.add_scalar(f'G param gradient {i}',
-                                param,
-                                epoch * len(dataset) + epoch_iter)
+            writer.add_scalar(f'G parameter gradient mean',
+                            g_param_grads,
+                            epoch * len(dataset) + epoch_iter)
 
 
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
@@ -106,5 +125,8 @@ if __name__ == '__main__':
         visuals = model.get_current_visuals()  # get image results
         img_path = model.get_image_paths()     # get image paths
         print('processing (%04d)-th image... %s' % (i, img_path))
+        for label, im in visuals.items():
+            if label == 'real_A':
+                save_mean_and_var_images(webpage, img_path, im)
         save_images(webpage, visuals, img_path, aspect_ratio=1.0, width=opt.display_winsize)
     webpage.save()  # save the HTML

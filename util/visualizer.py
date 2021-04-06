@@ -42,6 +42,20 @@ def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256):
         links.append(image_name)
     webpage.add_images(ims, txts, links, width=width)
 
+def save_mean_and_var_images(webpage, image_path, real_A_image, aspect_ratio=1.0, width=256):
+    image_dir = webpage.get_image_dir()
+    short_path = ntpath.basename(image_path[0])
+    name = os.path.splitext(short_path)[0]
+
+    mean_image_name = f'{name}_mean.png'
+    mean_save_path = os.path.join(image_dir, mean_image_name)
+
+    var_image_name = f'{name}_variance.png'
+    var_save_path = os.path.join(image_dir, var_image_name)
+
+    util.save_mean_image(real_A_image, mean_save_path)
+    util.save_variance_image(real_A_image, var_save_path)
+
 
 class Visualizer():
     """This class includes several functions that can display/save images and print/save logging information.

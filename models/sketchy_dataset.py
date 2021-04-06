@@ -14,7 +14,7 @@ class SketchyDataset(Dataset):
     modified to run on a pkl file of the Sketchy dataset
     '''
 
-    def __init__(self, pkl_file, mode, drop_strokes=True):
+    def __init__(self, pkl_file, mode, drop_strokes=False):
         self.pkl_file = pkl_file
         self.mode = mode
         self.drop_strokes = drop_strokes
@@ -24,52 +24,29 @@ class SketchyDataset(Dataset):
             self.categories = saved['categories']
             self.num_sketches = len(saved['sketches'][0])
             self.sketches = saved['sketches']
-            self.fnames = saved['fnames']
-            for i, name in enumerate(self.fnames): #remove .svg from end
-                self.fnames[i] = name[:-4]
-                
 
         self.fold_idx = None
         self.offset = 0 #for folds
         self.indices = [i for i in range(self.num_sketches)]
 
 
+    #NOTE: don't use indices - sketches are now fetched by name
     def set_fold(self, idx):
         '''
         can be removed completely - or pass 0 in as the index and it has no effect
         '''
-        #print('performing set fold')
-        #print(f'number of sketches: {self.num_sketches}')
-        self.fold_idx = idx
         self.indices = list()
 
         third = self.num_sketches // 3        
         self.offset = third * idx
 
-        #index_slice = [i for i in range(third * idx, third * (idx + 1))]
 
         self.indices = [i for i in range(self.num_sketches)] #whole ds the whole time
-        '''
-        if self.mode == 'train': #use whole DS
-            self.indices = [i for i in range(self.num_sketches)]
-        else: #use a third of the DS
-            small_slice = []
-            for i in range(self.num_sketches):
-                if i not in index_slice:
-                    small_slice.append(i)
-            self.indices = small_slice
-        '''
 
         print('[*] Created a new {} dataset with {} fold as validation data'.format(self.mode, idx))
 
+    '''
     def __getitem__(self, idx):
-        #debugging
-        #print(f'index {idx}')
-        #print(f'indices array length {len(self.indices)}')
-        #print(f'num sketches {self.num_sketches}')
-        #print(f'num fnames {len(self.fnames)}')
-
-
         cid = 0 #we just use the same category the whole time
         sid = self.indices[idx]
 
@@ -77,15 +54,6 @@ class SketchyDataset(Dataset):
 
         if self.mode == 'train':
             cvxhull = None
-            pts_xy = sid_points[:, 0:2]
-            if cvxhull is not None:
-                if random.uniform(0, 1) > 0.5:
-                    pts_xy = SketchUtil.random_cage_deform(np.copy(cvxhull), pts_xy, thresh=0.1)
-                    pts_xy = SketchUtil.normalization(pts_xy)
-                if random.uniform(0, 1) > 0.5:
-                    pts_xy = SketchUtil.random_affine_transform(pts_xy, scale_factor=0.2, rot_thresh=40.0)
-            #pts_xy = SketchUtil.random_horizontal_flip(pts_xy)
-            sid_points[:, 0:2] = pts_xy
             if self.drop_strokes:
                 sid_points = self._random_drop_strokes(sid_points)
             fname_index = sid
@@ -93,6 +61,30 @@ class SketchyDataset(Dataset):
             fname_index = self.offset + sid
         sample = {'points3': sid_points, 'category': cid, 'fname_index': fname_index}
         return sample
+    '''
+
+    def find_sketch(self, sketch_name):
+        cid = 0 #we just use the same category the whole time
+
+        points = np.copy(self.sketches[cid][sketch_name])
+
+        if self.drop_strokes: #this should never be called
+            points = self._random_drop_strokes(points)
+
+        sample = {'points3': points, 'category': cid}
+        return sample
+
+    def match_sketches(self, sketch_prefix):
+        '''
+        return a list of all sketches in the dataset whose name matches the given pefix
+        '''
+        cid = 0
+        matches = []
+        for sketch_filename in self.sketches[cid].keys():
+            if sketch_filename.startswith(sketch_prefix):
+                points = np.copy(self.sketches[cid][sketch_filename])
+                matches.append({'points3': points, 'category': cid})
+        return matches
 
     def _random_drop_strokes(self, points3):
         strokes = SketchUtil.to_stroke_list(points3)
@@ -109,9 +101,6 @@ class SketchyDataset(Dataset):
     def num_categories(self):
         return len(self.categories)
         
-    def get_fnames(self):
-        return self.fnames
-
     def dispose(self):
         pass
 

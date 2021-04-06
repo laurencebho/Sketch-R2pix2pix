@@ -35,6 +35,10 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--pool_size', type=int, default=50, help='the size of image buffer that stores previously generated images')
         parser.add_argument('--lr_policy', type=str, default='linear', help='learning rate policy. [linear | step | plateau | cosine]')
         parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters iterations')
+        # parameters added for experimentation
+        parser.add_argument('--category_loss_off', action='store_false', help='set to exclude category loss in loss calculation')
+        parser.add_argument('--discrim_layers', type=int, default=3, help='number of discriminator layers in pix2pix model')
+
 
         self.isTrain = True
         return parser

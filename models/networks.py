@@ -159,7 +159,7 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     return init_net(net, init_type, init_gain, gpu_ids)
 
 
-def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal', init_gain=0.02, gpu_ids=[]):
+def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal', init_gain=0.02, gpu_ids=[], discrim_layers=3):
     """Create a discriminator
 
     Parameters:
@@ -194,7 +194,7 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
 
     #modifying the basic option to add category prediction
     if netD == 'basic':  # default PatchGAN classifier
-        net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer)
+        net = NLayerDiscriminator(input_nc, ndf, n_layers=discrim_layers, norm_layer=norm_layer)
     elif netD == 'n_layers':  # more options
         net = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer)
     elif netD == 'pixel':     # classify if each pixel is real or fake
@@ -539,7 +539,7 @@ class UnetSkipConnectionBlock(nn.Module):
 class NLayerDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
 
-    def __init__(self, input_nc, ndf=64, n_layers=8, norm_layer=nn.BatchNorm2d):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d):
         """Construct a PatchGAN discriminator
 
         Parameters:
@@ -581,7 +581,7 @@ class NLayerDiscriminator(nn.Module):
         main_model_seq = [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
         self.main_model = nn.Sequential(*main_model_seq)  # output 1 channel prediction map
         
-        discrim_seq = [nn.Conv2d(ndf * nf_mult, 32, kernel_size=kw, stride=1, padding=padw), nn.Flatten(), nn.Linear(32 * 30 * 30, 49)]
+        discrim_seq = [nn.Conv2d(ndf * nf_mult, 32, kernel_size=kw, stride=1, padding=padw), nn.Flatten(), nn.Linear(32 * 30 * 30, 50)]
         self.discrim = nn.Sequential(*discrim_seq)
     
 

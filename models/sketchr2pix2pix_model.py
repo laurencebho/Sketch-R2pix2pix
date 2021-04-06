@@ -50,14 +50,14 @@ class SketchR2Pix2PixModel(BaseModel):
         else:  # during test time, only load G
             self.model_names = ['G']
         #sketchrcnn model
-        self.sketchr2cnn = SketchR2CNNTrain() #or SketchR2CNNEval() depending on the mode
+        self.sketchr2cnn = SketchR2CNNTrain(opt.input_nc) #must be passed a number of channels
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                       not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
 
         if self.isTrain:  # define a discriminator; conditional GANs need to take both input and output images; Therefore, #channels for D is input_nc + output_nc
             self.netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
-                                          opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+                                          opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids, discrim_layers=opt.discrim_layers)
 
         if self.isTrain:
             # define loss functions
@@ -67,7 +67,7 @@ class SketchR2Pix2PixModel(BaseModel):
             # get param list for the Generator Optimizer
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
             self.optimizer_G = torch.optim.Adam(list(self.netG.parameters()), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_RNN = torch.optim.Adam(list(self.sketchr2cnn.get_rnn_params()), lr=opt.lr*20, betas=(opt.beta1, 0.999))
+            self.optimizer_RNN = torch.optim.Adam(list(self.sketchr2cnn.get_rnn_params()), lr=opt.lr*50, betas=(opt.beta1, 0.999))
             self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_RNN)
@@ -76,7 +76,7 @@ class SketchR2Pix2PixModel(BaseModel):
         self.svg_dataset = SketchyDataset('datasets/sketchy.pkl', 'train')
 
         #dictionary of sketchy_gan categories
-        self.category_dict = {'n04398044': ('teapot', 0), 'invalid.txt': ('teapot', 0), 'checked.txt': ('teapot', 0),
+        self.category_dict = {'n04398044': ('teapot', 0),
             'n02503517': ('elephant', 1), 'n03147509': ('cup', 2), 'n03063073': ('cup', 2), 'n02976123': ('knife', 3),
             'n03624134': ('knife', 3), 'n02973904': ('knife', 3), 'n02980441': ('castle', 4), 'n02109525': ('dog', 5),
             'n02106662': ('dog', 5), 'n02103406': ('dog', 5), 'n02374451': ('horse', 6), 'n07697537': ('hotdog', 7),
@@ -95,7 +95,7 @@ class SketchR2Pix2PixModel(BaseModel):
             'n07753275': ('pineapple', 40), 'n03633091': ('spoon', 41), 'n04597913': ('spoon', 41), 'n04350769': ('spoon', 41),
             'n04284002': ('spoon', 41), 'n02834778': ('bicycle', 42), 'n04126066': ('bicycle', 42), 'n03792782': ('bicycle', 42),
             'n03481172': ('hammer', 43), 'n02131653': ('bear', 44), 'n02129604': ('tiger', 45), 'n01944390': ('snail', 46),
-            'n03028079': ('church', 47), 'n02824448': ('bell', 48), 'n03028596': ('bell', 48)
+            'n03028079': ('church', 47), 'n02824448': ('bell', 48), 'n03028596': ('bell', 48), 'n02958343': ('car_(sedan)', 49), 'n04166281': ('car_(sedan)', 49)
             }
     
 
@@ -121,18 +121,13 @@ class SketchR2Pix2PixModel(BaseModel):
         fnames = self.svg_dataset.get_fnames()
         svg_file_index = None
 
-        indices = []
-        for i, fname in enumerate(fnames):
-            if fname.startswith(search_filename):
-                indices.append(i)
+        matching_sketch_data = self.svg_dataset.match_sketches(search_filename)
         
-        if len(indices) is None:
+        if len(matching_sketch_data) == 0: #the case where an image has no sketches - should never happen
             raise Exception(f'could not find matching file for {search_filename}')
         
-        for index in indices:
-            svg_data = self.svg_dataset[index]
-
-            t = self.sketchr2cnn.get_image(svg_data)
+        for sketch_info in matching_sketch_data:
+            t = self.sketchr2cnn.get_image(sketch_info)
             t = t * 255
             t = t.unsqueeze(0)
             t = torch.nn.functional.interpolate(t,size=(256,256), mode='bilinear')     
@@ -166,9 +161,18 @@ class SketchR2Pix2PixModel(BaseModel):
         pred_real = self.netD(real_AB)[0]
         self.loss_D_real = self.criterionGAN(pred_real, True)
         # combine loss and calculate gradients
-        self.loss_D = (self.loss_D_fake + self.loss_D_real + self.nll_loss_D) * 0.5
+        if self.opt.category_loss_off:
+            self.loss_D = (self.loss_D_fake + self.loss_D_real) * 0.5
+        else:
+            self.loss_D = (self.loss_D_fake + self.loss_D_real + self.nll_loss_D) * 0.5
+
+
+        individual_D_losses = [self.loss_D_fake, self.loss_D_real]
+        if self.opt.category_loss_off:
+            individual_D_losses.append(self.nll_loss_D)
+
         self.loss_D.backward(retain_graph=True)
-        return self.loss_D
+        return self.loss_D, individual_D_losses
 
     def backward_G(self):
         """Calculate GAN and L1 loss for the generator"""
@@ -186,9 +190,17 @@ class SketchR2Pix2PixModel(BaseModel):
         # Second, G(A) = B
         self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # combine loss and calculate gradients
-        self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.nll_loss_G #add nll loss too
+        if self.opt.category_loss_off:
+            self.loss_G = self.loss_G_GAN + self.loss_G_L1
+        else:
+            self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.nll_loss_G #add nll loss too
+
+        individual_G_losses = [self.loss_G_GAN, self.loss_G_L1]
+        if self.opt.category_loss_off:
+            individual_G_losses.append(self.nll_loss_G)
+
         self.loss_G.backward()
-        return(self.loss_G)
+        return self.loss_G, individual_G_losses
 
     def optimize_parameters(self):
         while len(self.real_As) > 0:
@@ -196,16 +208,16 @@ class SketchR2Pix2PixModel(BaseModel):
             # update D
             self.set_requires_grad(self.netD, True)  # enable backprop for D
             self.optimizer_D.zero_grad()     # set D's gradients to zero
-            loss_D = self.backward_D()                # calculate gradients for D
+            loss_D, individual_D_losses = self.backward_D()                # calculate gradients for D
             self.optimizer_D.step()          # update D's weights
             # update G
             self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
             self.optimizer_G.zero_grad()        # set G's gradients to zero
             self.optimizer_RNN.zero_grad()        # set G's gradients to zero
-            loss_G  = self.backward_G()                   # calculate graidents for G
+            loss_G, individual_G_losses  = self.backward_G()                   # calculate graidents for G
             self.optimizer_G.step()             # udpate G's weights
             self.optimizer_RNN.step()
-            return loss_D, loss_G
+            return loss_D, individual_D_losses, loss_G, individual_G_losses
 
 
     def get_param_grads(self):
@@ -215,10 +227,11 @@ class SketchR2Pix2PixModel(BaseModel):
         rnn_grads = []
         for param in self.sketchr2cnn.get_rnn_params():
             rnn_grads.append(torch.mean(param.grad.view(-1)))
-            break
+        rnn_mean = np.mean(rnn_grads)
 
         g_grads = []
         for param in self.netG.parameters():
             g_grads.append(torch.mean(param.grad.view(-1)))
-            break
-        return rnn_grads, g_grads
+        g_mean = np.mean(g_grads)
+        
+        return rnn_mean, g_mean
