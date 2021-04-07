@@ -112,14 +112,14 @@ if __name__ == '__main__':
 
 
     #test the model - saves images in results directory
-    rand_target = round(100 / dataset_size)
     web_dir = os.path.join('./results', opt.name)  # define the website directory
     if opt.load_iter > 0:  # load_iter is 0 by default
         web_dir = f'{web_dir}'
     print('creating web directory', web_dir)
     webpage = html.HTML(web_dir, f'{web_dir}')
 
-    for i, data in enumerate(dataset):
+    test_dataset = create_dataset(opt, test_override=True)  # create a dataset given opt.dataset_mode and other options
+    for i, data in enumerate(test_dataset):
         model.set_input(data)  # unpack data from data loader
         model.test()           # run inference
         visuals = model.get_current_visuals()  # get image results
