@@ -4,7 +4,7 @@
 #SBATCH --gres=gpu
 #SBATCH -p ug-gpu-small
 #SBATCH --qos=short
-#SBATCH -t 07-00:00:00
+#SBATCH -t 02-00:00:00
 #SBATCH --job-name=sketchr2pix2pixtests
 #SBATCH --mem=24G
 #SBATCH --mail-user laurence.ho@durham.ac.uk
