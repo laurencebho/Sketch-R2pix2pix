@@ -136,10 +136,8 @@ class SketchR2CNN(BaseSketchR2CNNModel):
         images = RasterIntensityFunc.apply(points, new_intensities, self.img_size, self.thickness, self.eps, self.device)
         if images.size(1) == 1:
             images = images.repeat(1, 3, 1, 1)
-        cnnfeat = self.cnn(images)
-        logits = self.fc(cnnfeat)
 
-        return logits, intensities, images
+        return None, intensities, images
 
 
     def get_rnn_params(self):

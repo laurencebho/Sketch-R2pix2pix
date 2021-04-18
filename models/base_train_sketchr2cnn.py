@@ -340,7 +340,7 @@ class SketchR2CNNTrain(BaseTrain):
         batch_padded = {
             'points3': points3_padded_list,
             'points3_offset': points3_offset_list,
-            'points3_length': [len(points3_padded_list)],
+            'points3_length': length_list,
         }
 
         sort_indices = np.argsort(-np.array(length_list))
