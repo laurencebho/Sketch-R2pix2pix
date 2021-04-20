@@ -112,7 +112,6 @@ class SketchR2Pix2PixModel(BaseModel):
         real_As = []
         search_filename = self.AB_path[0].split('/')[-1]
         search_filename = search_filename[:-4]
-        print(f'searching for {search_filename}')
 
         search_category = search_filename.split('_')[0]
 
