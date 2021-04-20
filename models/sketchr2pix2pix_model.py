@@ -100,6 +100,7 @@ class SketchR2Pix2PixModel(BaseModel):
     
 
     def set_input(self, input):
+
         self.real_B = input['B'].to(self.device)
         #print(f'real B dimensions {self.real_B.shape}')
         self.AB_path = input['A_paths']
@@ -108,9 +109,10 @@ class SketchR2Pix2PixModel(BaseModel):
         self.image_paths = input['A_paths']
 
         #get list of real As
-        self.real_As = []
+        real_As = []
         search_filename = self.AB_path[0].split('/')[-1]
         search_filename = search_filename[:-4]
+        print(f'searching for {search_filename}')
 
         search_category = search_filename.split('_')[0]
 
@@ -125,18 +127,21 @@ class SketchR2Pix2PixModel(BaseModel):
         if len(matching_sketch_data) == 0: #the case where an image has no sketches - should never happen
             raise Exception(f'could not find matching file for {search_filename}')
         
+        if len(matching_sketch_data) > 1:
+            raise Exception(f'found too many matches for {search_filename}')
+        
         for sketch_info in matching_sketch_data:
             t = self.sketchr2cnn.get_image(sketch_info)
             t = t * 255
             t = t.unsqueeze(0)
             t = torch.nn.functional.interpolate(t,size=(256,256), mode='bilinear')     
-            self.real_As.append(t)
+            real_As.append(t)
+        
+        self.real_A = real_As[0]
 
     def forward(self):
         #print(f'real A dimensions {self.real_A.shape}')
-        self.real_A = self.real_As[-1]
         self.fake_B = self.netG(self.real_A)  # G(A)
-        del self.real_As[-1]
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -202,21 +207,20 @@ class SketchR2Pix2PixModel(BaseModel):
         return self.loss_G, individual_G_losses
 
     def optimize_parameters(self):
-        while len(self.real_As) > 0:
-            self.forward()                   # compute fake images: G(A)
-            # update D
-            self.set_requires_grad(self.netD, True)  # enable backprop for D
-            self.optimizer_D.zero_grad()     # set D's gradients to zero
-            loss_D, individual_D_losses = self.backward_D()                # calculate gradients for D
-            self.optimizer_D.step()          # update D's weights
-            # update G
-            self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
-            self.optimizer_G.zero_grad()        # set G's gradients to zero
-            self.optimizer_RNN.zero_grad()        # set G's gradients to zero
-            loss_G, individual_G_losses  = self.backward_G()                   # calculate graidents for G
-            self.optimizer_G.step()             # udpate G's weights
-            self.optimizer_RNN.step()
-            return loss_D, individual_D_losses, loss_G, individual_G_losses
+        self.forward()                   # compute fake images: G(A)
+        # update D
+        self.set_requires_grad(self.netD, True)  # enable backprop for D
+        self.optimizer_D.zero_grad()     # set D's gradients to zero
+        loss_D, individual_D_losses = self.backward_D()                # calculate gradients for D
+        self.optimizer_D.step()          # update D's weights
+        # update G
+        self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
+        self.optimizer_G.zero_grad()        # set G's gradients to zero
+        self.optimizer_RNN.zero_grad()        # set RNN's gradients to zero
+        loss_G, individual_G_losses  = self.backward_G()                   # calculate graidents for G
+        self.optimizer_G.step()             # udpate G's weights
+        self.optimizer_RNN.step()
+        return loss_D, individual_D_losses, loss_G, individual_G_losses
 
 
     def get_param_grads(self):
