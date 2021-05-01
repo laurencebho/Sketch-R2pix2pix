@@ -140,8 +140,8 @@ class SketchR2Pix2PixModel(BaseModel):
 
     def forward(self):
         #print(f'real A dimensions {self.real_A.shape}')
-        noise = torch.zeros(self.real_A.shape, dtype=torch.float64)
-        noise = noise + (0.2**0.5)*torch.randn(self.real_A.shape) #mean 0 variance 0.2 gaussian noise
+        noise = torch.zeros(self.real_A.shape, dtype=torch.float32).to(self.device)
+        noise = noise + (0.2**0.5)*torch.randn(self.real_A.shape).to(self.device) #mean 0 variance 0.2 gaussian noise
 
         self.noisy_real_A = self.real_A + noise
 
@@ -184,6 +184,7 @@ class SketchR2Pix2PixModel(BaseModel):
         self.loss_D.backward(retain_graph=True)
         return self.loss_D, individual_D_losses
 
+
     def backward_G(self):
         """Calculate GAN and L1 loss for the generator"""
         #add code for SketchR2CNN training here
@@ -193,11 +194,11 @@ class SketchR2Pix2PixModel(BaseModel):
         pred_fake, pred_category = self.netD(fake_AB)
 
         diversity_val = torch.sub(self.fake_noise_B, self.fake_B)
-        diversity_val = torch.abs(diversity_val)
-        diversity_val = torch.div(diversity_val, self.noisy_real_A)
-        diversity_val = torch.sum(diversity_val)
+        diversity_val = torch.sum(torch.abs(diversity_val))
+        noisy_sum = torch.sum(torch.abs(self.noisy_real_A))
+        diversity_val = torch.div(diversity_val, noisy_sum)
 
-        tau = torch.tensor([1], dtype=torch.float64)
+        tau = torch.tensor([1], dtype=torch.float32).to(self.device)
         self.G_diversity_loss = torch.min(diversity_val, tau)
 
         ce_loss = torch.nn.CrossEntropyLoss()
@@ -205,19 +206,20 @@ class SketchR2Pix2PixModel(BaseModel):
 
         self.loss_G_GAN = self.criterionGAN(pred_fake, True)
         # Second, G(A) = B
-        self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
+        self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1 * 0.1 #lambda1 comes out as 10
         # combine loss and calculate gradients
         if self.opt.category_loss_off:
             self.loss_G = self.loss_G_GAN + self.loss_G_L1 - self.G_diversity_loss
         else:
-            self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.nll_loss_G  - self.G_diversity_loss#add nll loss too
+            self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.nll_loss_G  - (self.G_diversity_loss * 5)#add nll loss too
 
         individual_G_losses = [self.loss_G_GAN, self.loss_G_L1]
-        if self.opt.category_loss_off:
+        if not self.opt.category_loss_off:
             individual_G_losses.append(self.nll_loss_G)
 
         self.loss_G.backward()
         return self.loss_G, individual_G_losses
+
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)

@@ -69,7 +69,7 @@ if __name__ == '__main__':
             writer.add_scalar('L1 Loss',
                             individual_G_losses[1],
                             epoch * len(dataset) + epoch_iter)
-            if len(individual_D_losses) == 3:
+            if len(individual_G_losses) == 3:
                 writer.add_scalar('Generator Classification Loss', # category loss
                                 individual_G_losses[2],
                                 epoch * len(dataset) + epoch_iter)
