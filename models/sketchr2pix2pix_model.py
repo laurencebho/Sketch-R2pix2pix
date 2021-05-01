@@ -140,7 +140,14 @@ class SketchR2Pix2PixModel(BaseModel):
 
     def forward(self):
         #print(f'real A dimensions {self.real_A.shape}')
+        noise = torch.zeros(self.real_A.shape, dtype=torch.float64)
+        noise = noise + (0.2**0.5)*torch.randn(self.real_A.shape) #mean 0 variance 0.2 gaussian noise
+
+        self.noisy_real_A = self.real_A + noise
+
+
         self.fake_B = self.netG(self.real_A)  # G(A)
+        self.fake_noise_B = self.netG(self.noisy_real_A) 
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -185,6 +192,13 @@ class SketchR2Pix2PixModel(BaseModel):
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
         pred_fake, pred_category = self.netD(fake_AB)
 
+        diversity_val = torch.sub(self.fake_noise_B, self.fake_B)
+        diversity_val = torch.abs(diversity_val)
+        diversity_val = torch.div(diversity_val, self.noisy_real_A)
+        diversity_val = torch.sum(diversity_val)
+
+        tau = torch.tensor([1], dtype=torch.float64)
+        self.G_diversity_loss = torch.min(diversity_val, tau)
 
         ce_loss = torch.nn.CrossEntropyLoss()
         self.nll_loss_G = ce_loss(pred_category, self.correct_category)
@@ -194,9 +208,9 @@ class SketchR2Pix2PixModel(BaseModel):
         self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # combine loss and calculate gradients
         if self.opt.category_loss_off:
-            self.loss_G = self.loss_G_GAN + self.loss_G_L1
+            self.loss_G = self.loss_G_GAN + self.loss_G_L1 - self.G_diversity_loss
         else:
-            self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.nll_loss_G #add nll loss too
+            self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.nll_loss_G  - self.G_diversity_loss#add nll loss too
 
         individual_G_losses = [self.loss_G_GAN, self.loss_G_L1]
         if self.opt.category_loss_off:
